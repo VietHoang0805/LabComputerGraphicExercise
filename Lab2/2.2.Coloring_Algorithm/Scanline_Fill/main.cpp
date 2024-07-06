@@ -1,54 +1,121 @@
 #include <GL/glut.h>
-void initGL()
-{
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f); //R=0,G=0,B=0, anpha=1
-	glOrtho(-320,320,-240,240,-1,1);	
-}
-void LineBres(int x1,int y1,int x2,int y2)	
-{
-	
-   	int Dx = x2-x1; 
-	int Dy = y2-y1;
-   	int p = 2*Dy-Dx;
-  	int x = x1;	
-	int y = y1;
-  	glBegin(GL_POINTS);
-	glVertex2i(x,y);
-	while (x < x2)  
-	{
-		if (p <0)	 
-            p+= 2*Dy;
-		else
-            {
-            	p+=2*(Dy-Dx);
-			    y++;
-			}
-		x++;
-        glVertex2i(x,y);
-	}
-	glEnd();
-  	
+
+// Ð?nh nghia c?u trúc di?m 2D
+struct Point {
+    int x, y;
+    Point(int _x, int _y) : x(_x), y(_y) {}
+};
+
+// Các d?nh c?a da giác
+Point vertices[] = {{0, 400}, {300, 400}, {150, 200}, {10, 300}};
+int numVertices = sizeof(vertices) / sizeof(vertices[0]);
+
+// H?ng s? màu
+const float RED[] = {1.0, 0.0, 0.0};
+const float BLUE[] = {0.0, 0.0, 1.0};
+const float WHITE[] = {1.0, 1.0, 1.0};
+
+// Hàm v? da giác
+void drawPolygon() {
+    glColor3fv(RED); // Màu biên d?
+    glBegin(GL_LINE_LOOP);
+    for (int i = 0; i < numVertices; ++i) {
+        glVertex2i(vertices[i].x, vertices[i].y);
+    }
+    glEnd();
+    glFlush();
 }
 
-void mydisplay()
-{
+// Hàm x? lý s? ki?n click chu?t
+void mouse(int button, int state, int x, int y) {
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+        y = glutGet(GLUT_WINDOW_HEIGHT) - y; // Chuy?n d?i t?a d? y
+
+        // Tìm di?m bên trong da giác d? b?t d?u quét (scanline seed)
+        int seedX = x;
+        int seedY = y;
+
+        // Stack s? d?ng d? luu các di?m c?n x? lý
+        struct Stack {
+            int top;
+            Point *items;
+            int maxSize;
+        };
+
+        Stack stack;
+        stack.top = -1;
+        stack.maxSize = 1000; // Gi? s? s? lu?ng di?m t?i da c?n x? lý
+        stack.items = (Point *)malloc(stack.maxSize * sizeof(Point));
+
+        // Push di?m seed vào stack
+        stack.items[++stack.top] = Point(seedX, seedY);
+
+        // Quét t?ng dòng và tô màu fill
+        while (stack.top >= 0) {
+            Point current = stack.items[stack.top--];
+
+            // Tô màu t?i di?m hi?n t?i
+            glColor3fv(BLUE); // Màu fill xanh duong
+            glBegin(GL_POINTS);
+            glVertex2i(current.x, current.y);
+            glEnd();
+            glFlush();
+
+            // Ki?m tra các di?m xung quanh d? push vào stack
+            Point neighbors[] = {{current.x - 1, current.y},
+                                 {current.x + 1, current.y},
+                                 {current.x, current.y - 1},
+                                 {current.x, current.y + 1}};
+
+            for (int i = 0; i < 4; ++i) {
+                Point neighbor = neighbors[i];
+                if (neighbor.x >= 0 && neighbor.x < glutGet(GLUT_WINDOW_WIDTH) &&
+                    neighbor.y >= 0 && neighbor.y < glutGet(GLUT_WINDOW_HEIGHT)) {
+                    // Ki?m tra n?u di?m là màu tr?ng (n?n)
+                    float color[3];
+                    glReadPixels(neighbor.x, neighbor.y, 1, 1, GL_RGB, GL_FLOAT, color);
+                    if (color[0] == WHITE[0] && color[1] == WHITE[1] && color[2] == WHITE[2]) {
+                        stack.items[++stack.top] = neighbor;
+                    }
+                }
+            }
+        }
+
+        free(stack.items); // Gi?i phóng b? nh? c?a stack
+    }
+}
+
+// Hàm hi?n th?
+void display() {
     glClear(GL_COLOR_BUFFER_BIT);
-	glColor3f(1.0, 0.0, 0.0);
-	LineBres(10, 10, 200, 200);
-	glViewport(0,0,640,480);
-	glFlush();
 
+    // V? da giác
+    drawPolygon();
+
+    glFlush();
 }
 
-int main(int argc, char** argv){
-	glutInit(&argc, argv);
-	int mode=GLUT_SINGLE | GLUT_RGB;
-	glutInitDisplayMode(mode);
-	glutInitWindowSize(640, 480);
-	glutInitWindowPosition(0, 0);
-	glutCreateWindow("DEMO THUAT TOAN VE DOAN THANG - BRESENHAM");
-	 
-	initGL();  
-	glutDisplayFunc(mydisplay);    
-	glutMainLoop();
+// Hàm kh?i t?o
+void init() {
+    glClearColor(WHITE[0], WHITE[1], WHITE[2], 1.0); // Màu n?n tr?ng
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, glutGet(GLUT_WINDOW_WIDTH), 0, glutGet(GLUT_WINDOW_HEIGHT));
 }
+
+// Hàm main
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitWindowSize(400, 400);
+    glutCreateWindow("Scanline Fill Algorithm with GLUT");
+
+    glutDisplayFunc(display);
+    glutMouseFunc(mouse);
+
+    init();
+
+    glutMainLoop();
+    return 0;
+}
+

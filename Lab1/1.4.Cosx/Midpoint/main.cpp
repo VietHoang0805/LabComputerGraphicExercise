@@ -1,54 +1,79 @@
 #include <GL/glut.h>
-void initGL()
+#include <cmath>
+
+// Khai báo h?ng s? cho c?a s? OpenGL
+const int WINDOW_WIDTH = 800;
+const int WINDOW_HEIGHT = 600;
+
+// Hàm v? di?m t?i (x, y) v?i màu tr?ng
+void setPixel(int x, int y)
 {
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f); //R=0,G=0,B=0, anpha=1
-	glOrtho(-320,320,-240,240,-1,1);	
-}
-void LineBres(int x1,int y1,int x2,int y2)	
-{
-	
-   	int Dx = x2-x1; 
-	int Dy = y2-y1;
-   	int p = 2*Dy-Dx;
-  	int x = x1;	
-	int y = y1;
-  	glBegin(GL_POINTS);
-	glVertex2i(x,y);
-	while (x < x2)  
-	{
-		if (p <0)	 
-            p+= 2*Dy;
-		else
-            {
-            	p+=2*(Dy-Dx);
-			    y++;
-			}
-		x++;
-        glVertex2i(x,y);
-	}
-	glEnd();
-  	
+    glBegin(GL_POINTS);
+    glVertex2i(x, y);
+    glEnd();
 }
 
-void mydisplay()
+// Hàm v? d? th? hàm cos(x) s? d?ng thu?t toán Midpoint
+void drawCosine(float amplitude)
+{
+    // Ði?u ch?nh d? v? t? -pi d?n pi
+    float startX = -M_PI;
+    float endX = M_PI;
+    float step = 0.01;
+
+    // Dùng thu?t toán Midpoint d? v? d? th? cos(x)
+    for (float x = startX; x <= endX; x += step)
+    {
+        float y = amplitude * cos(x);
+        int pixelX = static_cast<int>((x + M_PI) / (2 * M_PI) * WINDOW_WIDTH); // Scale x to fit window width
+        int pixelY = static_cast<int>((y + amplitude) / (2 * amplitude) * WINDOW_HEIGHT); // Scale y to fit window height
+        setPixel(pixelX, pixelY);
+    }
+}
+
+// Hàm display: v? d? th? khi c?a s? c?n v? l?i
+void display()
 {
     glClear(GL_COLOR_BUFFER_BIT);
-	glColor3f(1.0, 0.0, 0.0);
-	LineBres(10, 10, 200, 200);
-	glViewport(0,0,640,480);
-	glFlush();
 
+    // V? tr?c t?a d?
+    glColor3f(0.0, 0.0, 0.0);
+    glBegin(GL_LINES);
+    glVertex2i(0, WINDOW_HEIGHT / 2);
+    glVertex2i(WINDOW_WIDTH, WINDOW_HEIGHT / 2);
+    glVertex2i(WINDOW_WIDTH / 2, 0);
+    glVertex2i(WINDOW_WIDTH / 2, WINDOW_HEIGHT);
+    glEnd();
+
+    // V? d? th? cos(x) v?i amplitude là 200
+    glColor3f(0.0, 1.0, 0.0); // Màu xanh lá cây
+    drawCosine(200.0);
+
+    glFlush();
 }
 
-int main(int argc, char** argv){
-	glutInit(&argc, argv);
-	int mode=GLUT_SINGLE | GLUT_RGB;
-	glutInitDisplayMode(mode);
-	glutInitWindowSize(640, 480);
-	glutInitWindowPosition(0, 0);
-	glutCreateWindow("DEMO THUAT TOAN VE DOAN THANG - BRESENHAM");
-	 
-	initGL();  
-	glutDisplayFunc(mydisplay);    
-	glutMainLoop();
+// Hàm reshape: x? lý s? ki?n thay d?i kích thu?c c?a s?
+void reshape(int width, int height)
+{
+    glViewport(0, 0, width, height);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, width, 0, height);
+    glMatrixMode(GL_MODELVIEW);
 }
+
+// Hàm kh?i t?o và ch?y chuong trình
+int main(int argc, char **argv)
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
+    glutCreateWindow("Cos(x) Graph with Midpoint Algorithm");
+    glutDisplayFunc(display);
+    glutReshapeFunc(reshape);
+    glClearColor(1.0, 1.0, 1.0, 0.0); // Màu n?n tr?ng
+    glLoadIdentity();
+    glutMainLoop();
+    return 0;
+}
+

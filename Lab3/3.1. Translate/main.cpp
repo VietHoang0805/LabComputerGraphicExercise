@@ -1,123 +1,79 @@
-#include<bits/stdc++.h>
 #include <GL/glut.h>
-#include<stdlib.h>
-#include <time.h>
 
-#define maxWD 400
-#define maxHT 400
+// Bi?n luu tr? giá tr? t?nh ti?n
+float tx = 0.0f;
+float ty = 0.0f;
 
-// Tinh tien da giac
-// Khai bao cac bien
-int xa, ya, xb, yb, xc, yc, xd, yd, tx, ty;
+// Các d?nh c?a da giác
+GLfloat vertices[][2] = {{100.0f, 100.0f}, {200.0f, 100.0f}, {200.0f, 200.0f}, {100.0f, 200.0f}};
 
-void delay(unsigned int mseconds)
-{
-    clock_t goal = mseconds + clock();
-    while (goal > clock())
-        ;
+// Hàm v? tr?c t?a d? Oxy
+void drawAxes() {
+    glColor3f(0.0f, 0.0f, 0.0f); // Màu den
+    glBegin(GL_LINES);
+    // Tr?c X
+    glVertex2f(-300.0f, 0.0f);
+    glVertex2f(300.0f, 0.0f);
+    // Tr?c Y
+    glVertex2f(0.0f, -300.0f);
+    glVertex2f(0.0f, 300.0f);
+    glEnd();
 }
 
-void myInit(void)
-{
-    glColor3f(0.0, 0.0, 1.0);
-    glClearColor(1.0, 1.0, 1.0, 0.0);
+// Hàm v? da giác
+void drawPolygon() {
+    glColor3f(1.0f, 0.0f, 0.0f); // Màu d?
+    glBegin(GL_POLYGON);
+    for (int i = 0; i < 4; ++i) {
+        glVertex2f(vertices[i][0] + tx, vertices[i][1] + ty);
+    }
+    glEnd();
+}
+
+// Hàm hi?n th?
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    drawAxes();    // V? tr?c t?a d?
+    drawPolygon(); // V? da giác
+
+    glFlush();
+}
+
+// Hàm x? lý s? ki?n phím b?m
+void keyboard(unsigned char key, int x, int y) {
+    switch (key) {
+        case 'w': ty += 10.0f; break; // T?nh ti?n lên trên
+        case 's': ty -= 10.0f; break; // T?nh ti?n xu?ng du?i
+        case 'a': tx -= 10.0f; break; // T?nh ti?n sang trái
+        case 'd': tx += 10.0f; break; // T?nh ti?n sang ph?i
+        case 27:  exit(0);    break; // Thoát chuong trình khi nh?n phím ESC
+    }
+    glutPostRedisplay(); // Yêu c?u v? l?i c?nh
+}
+
+// Hàm kh?i t?o
+void init() {
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // Màu n?n tr?ng
     glMatrixMode(GL_PROJECTION);
-    gluOrtho2D(-400, maxWD, -400, maxHT);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glFlush();
+    glLoadIdentity();
+    gluOrtho2D(-300.0f, 300.0f, -300.0f, 300.0f); // H? t?a d? 2D
 }
 
-
-void translate_rec(int tx, int ty)
-{
-    glColor3f(1.0, 0.0, 0.0);
-    xa +=tx;
-    xb +=tx;
-    xc +=tx;
-    xd +=tx;
-    
-    ya +=ty;
-    yb +=ty;
-    yc +=ty;
-    yd +=ty;
-
-    glBegin(GL_LINE_LOOP);
-        glVertex2i(xa,  ya);
-        glVertex2i(xb, yb);
-        glVertex2i(xd,yd);
-        glVertex2i(xc, yc);
-
-    glEnd();
-}
-
-void draw_rec() {
-
-
-    glBegin(GL_LINES);
-        
-        glVertex2i(0, -400);     
-        glVertex2i(0, 400);     
-
-    glEnd();
-    glFlush();
-    
-    glBegin(GL_LINES);
-        
-        glVertex2i(400, 0);     
-        glVertex2i(-400, 0);     
-
-    glEnd();
-    glFlush();
-    
-    glBegin(GL_LINE_LOOP);
-        glVertex2i(xa,  ya);
-        glVertex2i(xb, yb);
-        glVertex2i(xd,yd);
-        glVertex2i(xc, yc);
-
-    glEnd();
-    glFlush();
-
-
-}
-
-void myDisplay(void)
-{
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    draw_rec();
-
-    delay(2000);
-
-    translate_rec(tx, ty);
-    glFlush();
-}
-
-int main(int argc, char** argv)
-{
-    printf("Input Point serially :  \n");
-    scanf("%d %d %d %d %d %d %d %d", &xa, &ya, &xb, &yb, &xc, &yc, &xd, &yd);
-
-    printf("Translate point tx and ty : \n");
-    scanf("%d %d", &tx, &ty);
-
+// Hàm main
+int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
-    glutInitWindowSize(2 * maxWD, 2 * maxHT);
-    glutInitWindowPosition(100, 150);
-    glutCreateWindow("Rectangle translation");
-    glutDisplayFunc(myDisplay);
-    myInit();
+    glutInitWindowSize(600, 600);
+    glutInitWindowPosition(100, 100);
+    glutCreateWindow("2D Translation");
+
+    init();
+
+    glutDisplayFunc(display);
+    glutKeyboardFunc(keyboard);
+
     glutMainLoop();
+    return 0;
 }
-// Toa do diem tham khao
-/*
-
-30 120
-120 120
-30 30
-120 30
-30 30
-
- */
 

@@ -1,112 +1,117 @@
 #include <GL/glut.h>
-#include <cmath>
+#include <stdio.h>
+#include <iostream>
+using namespace std;
 
-// Ðu?ng th?ng y = ax + b
-float a = 1.0f, b = 0.0f;
+double x1, y3, x2, y2;
+double m, c, p, q;
 
-// Các d?nh c?a da giác
-GLfloat vertices[][2] = {{100.0f, 100.0f}, {200.0f, 100.0f}, {200.0f, 200.0f}, {100.0f, 200.0f}};
-
-// Hàm v? tr?c t?a d? Oxy
-void drawAxes() {
-    glColor3f(0.0f, 0.0f, 0.0f); // Màu den
-    glBegin(GL_LINES);
-    // Tr?c X
-    glVertex2f(-300.0f, 0.0f);
-    glVertex2f(300.0f, 0.0f);
-    // Tr?c Y
-    glVertex2f(0.0f, -300.0f);
-    glVertex2f(0.0f, 300.0f);
-    glEnd();
-}
-
-// Hàm v? du?ng th?ng y = ax + b
-void drawLine() {
-    glColor3f(0.0f, 0.0f, 1.0f); // Màu xanh
-    glBegin(GL_LINES);
-    glVertex2f(-300.0f, a * (-300.0f) + b);
-    glVertex2f(300.0f, a * 300.0f + b);
-    glEnd();
-}
-
-// Hàm d?i x?ng qua du?ng th?ng y = ax + b
-void reflect(float& x, float& y, float a, float b) {
-    float d = (x + (y - b) * a) / (1 + a * a);
-    x = 2 * d - x;
-    y = 2 * d * a - y + 2 * b;
-}
-
-// Hàm v? da giác sau khi d?i x?ng
-void drawReflectedPolygon() {
-    glColor3f(1.0f, 0.0f, 0.0f); // Màu d?
-    glBegin(GL_POLYGON);
-    for (int i = 0; i < 4; ++i) {
-        float x = vertices[i][0];
-        float y = vertices[i][1];
-        reflect(x, y, a, b);
-        glVertex2f(x, y);
+int Round(double a) {
+    if (a - int(a) >= 0.5) {
+        return int(a) + 1;	
+    } else {
+        return int(a);
     }
+}
+
+void myInit() {
+    glClearColor(1.0, 1.0, 0.0, 1.0);
+    glMatrixMode(GL_PROJECTION);
+    gluOrtho2D(0, 500, 0, 500);
+}
+
+void draw_pixel(int x, int y) {
+    glBegin(GL_POINTS);
+    glVertex2i(x, y);
     glEnd();
 }
 
-// Hàm v? da giác g?c
-void drawPolygon() {
-    glColor3f(0.0f, 1.0f, 0.0f); // Màu xanh lá
-    glBegin(GL_POLYGON);
-    for (int i = 0; i < 4; ++i) {
-        glVertex2f(vertices[i][0], vertices[i][1]);
+void draw_line(double x1, double x2, double y1, double y2) {
+    int dx, dy, i, e;
+    int incx, incy, inc1, inc2;
+    int x, y;
+    int xx2 = Round(x2);
+    int xx1 = Round(x1);
+    int yy1 = Round(y1);
+    int yy2 = Round(y2);
+
+    dx = Round(x2) - Round(x1);
+    dy = Round(y2) - Round(y1);
+
+    if (dx < 0) dx = -dx;
+    if (dy < 0) dy = -dy;
+    incx = 1;
+    if (xx2 < xx1) incx = -1;
+    incy = 1;
+    if (yy2 < yy1) incy = -1;
+    x = xx1; y = yy1;
+    if (dx > dy) {
+        draw_pixel(x, y);
+        e = 2 * dy - dx;
+        inc1 = 2 * (dy - dx);
+        inc2 = 2 * dy;
+        for (i = 0; i < dx; i++) {
+            if (e >= 0) {
+                y += incy;
+                e += inc1;
+            } else
+                e += inc2;
+            x += incx;
+            draw_pixel(x, y);
+        }
+
+    } else {
+        draw_pixel(x, y);
+        e = 2 * dx - dy;
+        inc1 = 2 * (dx - dy);
+        inc2 = 2 * dx;
+        for (i = 0; i < dy; i++) {
+            if (e >= 0) {
+                x += incx;
+                e += inc1;
+            } else
+                e += inc2;
+            y += incy;
+            draw_pixel(x, y);
+        }
     }
-    glEnd();
 }
 
-// Hàm hi?n th?
-void display() {
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    drawAxes();               // V? tr?c t?a d?
-    drawLine();               // V? du?ng th?ng y = ax + b
-    drawPolygon();            // V? da giác g?c
-    drawReflectedPolygon();   // V? da giác sau khi d?i x?ng
-
+void myDisplay() {
+    draw_pixel(p, q);
+    draw_line(x1, x2, y3, y2);
+    double p1, q1;
+    p1 = ((1 - m * m) * p + 2 * m * q - 2 * c * m) / (1 + m * m);
+    q1 = (2 * m * p + (m * m - 1) * q + 2 * c) / (1 + m * m);
+    draw_pixel(p1, q1);
     glFlush();
 }
 
-// Hàm x? lý s? ki?n chu?t
-void mouse(int button, int state, int x, int y) {
-    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
-        // Chuy?n d?i t?a d? c?a s? thành t?a d? OpenGL
-        float x0 = (float)(x - 300);
-        float y0 = (float)(300 - y);
+int main(int argc, char **argv) {
 
-        // C?p nh?t du?ng th?ng y = ax + b v?i di?m nh?p chu?t
-        b = y0 - a * x0;
+    cout << "Enter m, c of y = mx + c:" << endl;
+    cin >> m >> c;
+    x1 = 0; y3 = c;
 
-        glutPostRedisplay();
+    if (m == 0) {
+        y2 = c; x2 = 500;
+    } else {
+        x2 = (500 - c) / m;
+        y2 = 500;
     }
-}
 
-// Hàm kh?i t?o
-void init() {
-    glClearColor(1.0f, 1.0f, 1.0f, 0.0f); // Màu n?n tr?ng
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluOrtho2D(-300.0f, 300.0f, -300.0f, 300.0f); // H? t?a d? 2D
-}
+    cout << "Enter the point (p, q) to reflect:" << endl;
+    cin >> p >> q;
 
-// Hàm main
-int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
-    glutInitWindowSize(600, 600);
-    glutInitWindowPosition(100, 100);
-    glutCreateWindow("2D Reflection across Line y=ax+b");
-
-    init();
-
-    glutDisplayFunc(display);
-    glutMouseFunc(mouse);
-
+    glutInitWindowSize(500, 500);
+    glutInitWindowPosition(0, 0);
+    glutCreateWindow("Point Reflection");
+    myInit();
+    glutDisplayFunc(myDisplay);
     glutMainLoop();
+
     return 0;
 }
 
